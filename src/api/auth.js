@@ -165,34 +165,26 @@ export const authApi = {
     return request.get(`/auth/station/detail/${stationId}`)
   },
 
-  // 数据导出相关API
+  // 数据导出相关API（后端真实 CSV 文件流，@SystemLog 自动记录导出审计）
   // 审核记录导出
   exportAuditRecords(params) {
     return request.post('/data/export/audit-records', params, { responseType: 'blob' })
   },
-  // 订单&用户数据导出
-  exportOrderUserData(params) {
-    return request.post('/data/export/order-user', params, { responseType: 'blob' })
+  // 用户数据导出
+  exportOrderUserData() {
+    return request.post('/data/export/order-user', {}, { responseType: 'blob' })
   },
-  // 订单明细/交易流水/退款记录导出
+  // 订单明细导出
   exportOrderDetails(params) {
     return request.post('/data/export/order-details', params, { responseType: 'blob' })
   },
-  // 用户列表/黑白名单/成就激励记录导出
-  exportUserLists(params) {
-    return request.post('/data/export/user-lists', params, { responseType: 'blob' })
+  // 导出记录（系统日志中 module=数据导出 的审计记录）
+  getExportRecords(params) {
+    return request.get('/system/log/list', { params })
   },
-  // 备份平台数据
-  backupPlatformData(params) {
-    return request.post('/data/backup', params)
-  },
-  // 查询备份任务状态
-  getBackupTaskStatus(taskId) {
-    return request.get(`/data/backup/status/${taskId}`)
-  },
-  // 回滚平台数据
-  rollbackPlatformData(params) {
-    return request.post('/data/rollback', params)
+  // 数据大屏汇总统计（真实数据）
+  getScreenStats() {
+    return request.get('/stats/screen')
   },
 
   // 论坛管理相关API
@@ -273,6 +265,10 @@ export const authApi = {
   // 待处理对话列表
   getPendingChatList(params) {
     return request.get('/customer-service/pending', { params })
+  },
+  // 全量对话记录列表（对话记录页）
+  getConversationList(params) {
+    return request.get('/customer-service/conversations', { params })
   },
   // 获取单条对话的消息列表
   getChatMessageList(conversationId, params) {
@@ -363,6 +359,14 @@ export const authApi = {
   // 紧急响应 - 响应紧急呼叫
   respondEmergencyCall(callId, data) {
     return request.post(`/emergency/call/${callId}/respond`, data)
+  },
+  // 紧急响应 - 添加处理日志（真持久化）
+  addEmergencyCallLog(callId, data) {
+    return request.post(`/emergency/call/${callId}/logs`, data)
+  },
+  // 紧急响应 - 查询处理日志
+  getEmergencyCallLogs(callId) {
+    return request.get(`/emergency/call/${callId}/logs`)
   },
 
   // 私人电桩管理相关API

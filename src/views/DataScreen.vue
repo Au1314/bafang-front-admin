@@ -11,7 +11,7 @@
         @refresh="handleManualRefresh"
       />
 
-      <CoreMetricsSection :metrics-data="metricsData" :metrics-prev="metricsPrev" />
+      <CoreMetricsSection :metrics-data="metricsData" :metrics-prev="metricsPrev" :demo-keys="demoMetricKeys" />
 
       <DataChartsSection
         ref="chartsRef"
@@ -122,11 +122,38 @@ const overrideRealtime = (response) => {
   })
 }
 
-// 拉取数据：mock 兜底 + 后端实时字段尽力覆盖
+// 拉取数据：优先真实大屏汇总（/stats/screen），拿不到再回退演示数据；后端实时字段尽力覆盖
+const demoMetricKeys = ['realtimePower', 'deviceOnlineRate']
+
 const fetchData = async () => {
   loading.value = true
   try {
-    applyMockData()
+    let screenOk = false
+    try {
+      const stats = await authApi.getScreenStats()
+      if (stats) {
+        // 真实指标（后端 /stats/screen 汇总）
+        metricsData.totalChargeEnergy = Number(stats.totalChargeAmount) || 0
+        metricsData.faultPileCount = Number(stats.faultPileCount) || 0
+        metricsData.orderTotalAmount = Number(stats.totalRevenue) || 0
+        metricsData.totalUsers = Number(stats.totalUsers) || 0
+        // 无数据来源的两项保留演示值（指标卡上已明示"演示"标注）
+        const mock = getMockMetrics(filters.timeRange, filters)
+        demoMetricKeys.forEach((key) => {
+          metricsData[key] = mock.current[key]
+        })
+        // 真实指标暂无环比上期数据，置 0 显示"—"
+        Object.keys(metricsPrev).forEach((key) => {
+          metricsPrev[key] = 0
+        })
+        screenOk = true
+      }
+    } catch (screenError) {
+      console.warn('获取大屏汇总统计失败，回退演示数据:', screenError)
+    }
+    if (!screenOk) {
+      applyMockData()
+    }
     const response = await authApi.getPlatformStats()
     overrideRealtime(response)
   } catch (error) {

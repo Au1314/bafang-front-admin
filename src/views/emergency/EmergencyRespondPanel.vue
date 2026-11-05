@@ -575,8 +575,17 @@ const selectEmergency = async (emergency) => {
     if (!isMounted.value) return
 
     selectedEmergency.value = response
-    handlingLogs.value = []
     newLogContent.value = ''
+    // 拉取该呼叫的持久化处理日志（失败不阻塞详情展示）
+    handlingLogs.value = []
+    try {
+      const logs = await authApi.getEmergencyCallLogs(emergency.id)
+      if (isMounted.value) {
+        handlingLogs.value = Array.isArray(logs) ? logs : []
+      }
+    } catch (logError) {
+      console.error('获取处理日志失败:', logError)
+    }
   } catch (error) {
     if (!isMounted.value) return
 
@@ -650,7 +659,7 @@ const respondEmergencyCall = async () => {
   }
 }
 
-// 标记为已处理
+// 标记为已处理（真实接口：完成呼叫）
 const markAsHandled = async () => {
   try {
     if (!isMounted.value) return
@@ -662,18 +671,19 @@ const markAsHandled = async () => {
       return
     }
 
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await authApi.completeEmergencyCall(selectedEmergencyId.value, { remark: '标记已处理' })
 
     if (!isMounted.value) return
 
     ElMessage.success('已标记为已处理')
+    selectedEmergencyId.value = null
+    selectedEmergency.value = null
+    handlingLogs.value = []
     fetchPendingEmergencyList()
   } catch (error) {
     if (!isMounted.value) return
 
     console.error('标记已处理失败:', error)
-    ElMessage.error('标记已处理失败')
   } finally {
     if (isMounted.value) {
       emergencyActionLoading.value = false
@@ -681,7 +691,7 @@ const markAsHandled = async () => {
   }
 }
 
-// 结束处理
+// 结束处理（真实接口：取消呼叫，需填写原因）
 const handleEndEmergency = async () => {
   try {
     if (!isMounted.value) return
@@ -691,19 +701,21 @@ const handleEndEmergency = async () => {
       return
     }
 
-    await ElMessageBox.confirm('确定要结束当前紧急呼叫处理吗？', '提示', {
-      confirmButtonText: '确定',
+    const { value } = await ElMessageBox.prompt('结束处理将取消该紧急呼叫，请输入取消原因：', '结束处理', {
+      confirmButtonText: '确定结束',
       cancelButtonText: '取消',
+      inputPlaceholder: '如：车主已自行解决',
+      inputValidator: (v) => (v && v.trim() ? true : '取消原因不能为空'),
       type: 'warning'
     })
 
     emergencyActionLoading.value = true
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
+
+    await authApi.cancelEmergencyCall(selectedEmergencyId.value, { cancelReason: value.trim() })
 
     if (!isMounted.value) return
 
-    ElMessage.success('处理已结束')
+    ElMessage.success('处理已结束，呼叫已取消')
     selectedEmergencyId.value = null
     selectedEmergency.value = null
     handlingLogs.value = []
@@ -714,7 +726,6 @@ const handleEndEmergency = async () => {
     }
 
     console.error('结束处理失败:', error)
-    ElMessage.error('结束处理失败')
   } finally {
     if (isMounted.value) {
       emergencyActionLoading.value = false
@@ -739,7 +750,11 @@ const addHandlingLog = async () => {
   try {
     addLogLoading.value = true
 
-    // 模拟添加日志
+    // 真实接口：持久化到 emergency_handle_log 表
+    await authApi.addEmergencyCallLog(selectedEmergencyId.value, { content: newLogContent.value })
+
+    if (!isMounted.value) return
+
     const newLog = {
       id: Date.now(),
       content: newLogContent.value,
@@ -755,17 +770,11 @@ const addHandlingLog = async () => {
       scrollEl.scrollTop = scrollEl.scrollHeight
     }
 
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 300))
-
-    if (isMounted.value) {
-      ElMessage.success('日志添加成功')
-    }
+    ElMessage.success('日志添加成功')
   } catch (error) {
     if (!isMounted.value) return
 
     console.error('添加日志失败:', error)
-    ElMessage.error('添加日志失败')
   } finally {
     if (isMounted.value) {
       addLogLoading.value = false

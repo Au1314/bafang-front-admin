@@ -29,9 +29,9 @@
         clearable
       >
         <el-option label="全部" :value="null" />
-        <el-option label="待处理" :value="0" />
-        <el-option label="处理中" :value="1" />
-        <el-option label="已结束" :value="2" />
+        <el-option label="进行中" :value="1" />
+        <el-option label="已完成" :value="2" />
+        <el-option label="已关闭" :value="3" />
       </el-select>
       <el-button @click="resetRecordFilter">重置</el-button>
     </div>
@@ -49,10 +49,8 @@
       <el-table-column prop="lastMessage" label="最后消息" width="300" show-overflow-tooltip />
       <el-table-column prop="status" label="状态" width="100">
         <template #default="scope">
-          <el-tag
-            :type="scope.row.status === 0 ? 'warning' : scope.row.status === 1 ? 'success' : 'info'"
-          >
-            {{ scope.row.status === 0 ? '待处理' : scope.row.status === 1 ? '处理中' : '已结束' }}
+          <el-tag :type="scope.row.status === 1 ? 'warning' : 'info'">
+            {{ scope.row.statusName || (scope.row.status === 1 ? '进行中' : scope.row.status === 2 ? '已完成' : '已关闭') }}
           </el-tag>
         </template>
       </el-table-column>
@@ -171,7 +169,7 @@
           <div class="message-content">
             <div class="message-sender">{{ message.senderName }}</div>
             <div class="message-text">{{ message.content }}</div>
-            <div class="message-time">{{ message.createTime }}</div>
+            <div class="message-time">{{ message.createTime || message.sendTime }}</div>
           </div>
         </div>
       </div>
@@ -208,52 +206,24 @@ const showRecordDetail = ref(false)
 const currentRecord = ref(null)
 const recordDetailMessages = ref([])
 
-// 获取全量对话记录 - 暂时使用mock数据，因为没有对应的API
+// 获取全量对话记录（真实接口：/customer-service/conversations 分页查询）
 const fetchAllChatRecords = async () => {
   try {
     recordLoading.value = true
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 300))
-
-    // 使用模拟数据
-    const mockData = Array.from({ length: 10 }, (_, index) => ({
-      id: 100 + index,
-      userId: 1000 + index,
-      userName: `用户${index + 1}`,
-      userPhone: `138****800${index + 1}`,
-      status: 2,
-      statusName: '已关闭',
-      lastMessage: `这是第${index + 1}条对话的最后一条消息`,
-      messageCount: Math.floor(Math.random() * 20) + 1,
-      createTime: new Date(Date.now() - index * 3600000).toLocaleString(),
-      endTime: new Date(Date.now() - index * 1800000).toLocaleString(),
-      durationText: `${Math.floor(Math.random() * 30) + 5}分钟`
-    }))
-
-    // 筛选数据
-    let filteredData = [...mockData]
-
-    // 关键词筛选
-    if (recordFilter.keyword) {
-      const keyword = recordFilter.keyword.toLowerCase()
-      filteredData = filteredData.filter(record =>
-        record.userName.toLowerCase().includes(keyword) ||
-        record.lastMessage.toLowerCase().includes(keyword)
-      )
+    const params = {
+      pageNum: recordPage.value,
+      pageSize: recordPageSize.value
     }
-
-    // 状态筛选
     if (recordFilter.status !== null && recordFilter.status !== undefined) {
-      filteredData = filteredData.filter(record => record.status === recordFilter.status)
+      params.status = recordFilter.status
     }
-
-    // 分页处理
-    const startIndex = (recordPage.value - 1) * recordPageSize.value
-    const endIndex = startIndex + recordPageSize.value
-    const paginatedData = filteredData.slice(startIndex, endIndex)
-
-    allChatRecords.value = paginatedData
-    recordTotal.value = filteredData.length
+    if (recordFilter.keyword) {
+      params.keyword = recordFilter.keyword
+    }
+    // 响应拦截器已解包 data（PageInfo：list/total/pageNum/pageSize）
+    const data = await authApi.getConversationList(params) || {}
+    allChatRecords.value = data?.list || []
+    recordTotal.value = Number(data?.total) || 0
   } catch (error) {
     console.error('获取对话记录失败:', error)
     console.error('错误详情:', error.response?.data || error.message)
@@ -286,30 +256,20 @@ const resetRecordFilter = () => {
   fetchAllChatRecords()
 }
 
-// 查看对话记录详情
+// 查看对话记录详情（真实接口：对话详情 + 消息列表）
 const viewChatRecord = async (record) => {
   currentRecord.value = record
   recordDetailMessages.value = []
   showRecordDetail.value = true
 
   try {
-    // 真实API调用
-    const response = await authApi.getChatCompleteRecord(record.id)
-
-    const chatData = response || {}
-
-    currentRecord.value = chatData
-
-    // 获取对话消息（模拟数据，因为API只返回对话详情，没有消息列表）
-    const mockMessages = Array.from({ length: record.messageCount }, (_, index) => ({
-      id: 200 + index,
-      content: `这是第${index + 1}条消息内容`,
-      senderType: index % 2 === 0 ? 0 : 1,
-      senderName: index % 2 === 0 ? chatData.userName : chatData.adminName,
-      createTime: new Date(Date.now() - (record.messageCount - index) * 60000).toLocaleString()
-    }))
-
-    recordDetailMessages.value = mockMessages
+    const detail = await authApi.getChatCompleteRecord(record.id)
+    if (detail) {
+      currentRecord.value = { ...record, ...detail }
+    }
+    // 拉取真实消息列表（PageInfo.list）
+    const msgData = await authApi.getChatMessageList(record.id, { pageNum: 1, pageSize: 200 }) || {}
+    recordDetailMessages.value = msgData?.list || []
   } catch (error) {
     console.error('获取对话记录详情失败:', error)
     console.error('错误详情:', error.response?.data || error.message)

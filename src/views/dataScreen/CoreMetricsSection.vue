@@ -13,7 +13,10 @@
                 {{ card.display }}<span class="kpi-unit">{{ card.unit }}</span>
               </template>
             </div>
-            <div class="kpi-label">{{ card.label }}</div>
+            <div class="kpi-label">
+              {{ card.label }}
+              <span v-if="card.demo" class="kpi-demo-tag">演示</span>
+            </div>
             <div class="kpi-trend" :class="card.trend.none ? 'none' : (card.trend.up ? 'up' : 'down')">
               <template v-if="!card.trend.none">
                 <el-icon><component :is="card.trend.up ? Top : Bottom" /></el-icon>
@@ -41,6 +44,11 @@ const props = defineProps({
   metricsPrev: {
     type: Object,
     default: () => ({})
+  },
+  // 无后端数据来源、以演示值展示的指标 key 列表（卡片上明示"演示"标注）
+  demoKeys: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -81,7 +89,9 @@ const cards = computed(() => {
       : countUpRefs[def.key].value.toLocaleString()
     return {
       ...def,
-      empty: !src,
+      demo: props.demoKeys.includes(def.key),
+      // 修复：src 为 0（如"故障桩=0"）是正常值，仅缺数据(null/undefined)才显示"暂无数据"
+      empty: src == null,
       display,
       trend: trendText(src, p[def.key], def.invert)
     }
@@ -165,6 +175,18 @@ const cards = computed(() => {
   color: #8b96a8;
   margin-top: 4px;
   font-weight: 500;
+}
+
+.kpi-demo-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 16px;
+  color: #f5c842;
+  border: 1px solid rgba(245, 200, 66, 0.5);
+  border-radius: 4px;
+  vertical-align: 1px;
 }
 
 .kpi-trend {

@@ -14,8 +14,8 @@
           <AIConfigPanel />
         </el-tab-pane>
 
-        <!-- 人工客服对话 -->
-        <el-tab-pane label="人工客服对话" name="chat" v-if="false">
+        <!-- 人工客服对话（后端 WS + REST 双通道均已就绪，正式开放） -->
+        <el-tab-pane label="人工客服对话" name="chat">
           <ChatPanel />
         </el-tab-pane>
 

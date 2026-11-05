@@ -1,5 +1,7 @@
 <template>
   <div class="charts-layout">
+    <!-- 明示：以下图表为演示数据；核心指标卡为真实数据（/stats/screen） -->
+    <div class="demo-note">以下图表为演示数据（明细数据源建设中）；顶部指标卡为真实数据</div>
     <!-- 第一行：三栏业务图 -->
     <div class="charts-row row-three">
       <div class="chart-card">
@@ -170,7 +172,7 @@ const initCharts = () => {
 
 // 区域充电桩分布柱状图
 const initRegionChart = () => {
-  const chart = echarts.init(regionChart.value)
+  const chart = getChart(regionChart.value)
   const d = chartData.value.region
   chart.setOption({
     tooltip: tooltip({ trigger: 'axis', axisPointer: { type: 'shadow' } }),
@@ -202,7 +204,7 @@ const initRegionChart = () => {
 
 // 交易数据双轴图（订单量柱 + 交易额线）
 const initTransactionChart = () => {
-  const chart = echarts.init(transactionChart.value)
+  const chart = getChart(transactionChart.value)
   const d = chartData.value.transaction
   chart.setOption({
     tooltip: tooltip({ trigger: 'axis', axisPointer: { type: 'cross' } }),
@@ -242,7 +244,7 @@ const initTransactionChart = () => {
 
 // 用户增长趋势折线图
 const initUserGrowthChart = () => {
-  const chart = echarts.init(userGrowthChart.value)
+  const chart = getChart(userGrowthChart.value)
   const d = chartData.value.userGrowth
   chart.setOption({
     tooltip: tooltip({ trigger: 'axis', axisPointer: { type: 'cross' } }),
@@ -282,7 +284,7 @@ const initUserGrowthChart = () => {
 
 // 认证量统计柱状图
 const initCertificationChart = () => {
-  const chart = echarts.init(certificationChart.value)
+  const chart = getChart(certificationChart.value)
   const d = chartData.value.certification
   chart.setOption({
     tooltip: tooltip({ trigger: 'axis', axisPointer: { type: 'shadow' } }),
@@ -314,7 +316,7 @@ const initCertificationChart = () => {
 
 // 占比环形图（tab 切换数据）
 const initProportionChart = () => {
-  const chart = echarts.init(proportionChart.value)
+  const chart = getChart(proportionChart.value)
   const items = chartData.value.proportion[proportionKey.value] || []
   const total = items.reduce((sum, it) => sum + it.value, 0) || 1
   chart.setOption({
@@ -381,8 +383,9 @@ const initProportionChart = () => {
 
 // 充电负荷热力图
 const initPileHeatmap = () => {
-  const chart = echarts.init(pileHeatmap.value)
-  const hours = ['12a', '2a', '4a', '6a', '8a', '10a', '12p', '2p', '4p', '6p', '8p', '10p']
+  const chart = getChart(pileHeatmap.value)
+  // 修复：数据为 7天×24小时，x 轴标签必须 24 个（此前 12 个标签对 24 列错位）
+  const hours = Array.from({ length: 24 }, (_, i) => `${i}时`)
   const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
   chart.setOption({
     tooltip: tooltip({ position: 'top' }),
@@ -432,6 +435,16 @@ const initPileHeatmap = () => {
 // 所有图表实例（用于 resize / dispose）
 const chartRefs = [regionChart, transactionChart, userGrowthChart, certificationChart, proportionChart, pileHeatmap]
 
+// 修复实例泄漏：同一 DOM 复用已有实例，筛选变化只 setOption 不重复 init
+const instances = new Map()
+const getChart = (el) => {
+  if (!el) return null
+  if (!instances.has(el)) {
+    instances.set(el, echarts.init(el))
+  }
+  return instances.get(el)
+}
+
 const handleResize = () => {
   chartRefs.forEach((ref) => {
     if (ref.value) echarts.getInstanceByDom(ref.value)?.resize()
@@ -460,13 +473,22 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  chartRefs.forEach((ref) => {
-    if (ref.value) echarts.getInstanceByDom(ref.value)?.dispose()
-  })
+  instances.forEach((chart) => chart?.dispose())
+  instances.clear()
 })
 </script>
 
 <style scoped>
+.demo-note {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #f5c842;
+  background: rgba(245, 200, 66, 0.08);
+  border: 1px dashed rgba(245, 200, 66, 0.4);
+  border-radius: 8px;
+}
+
 .charts-layout {
   display: flex;
   flex-direction: column;
