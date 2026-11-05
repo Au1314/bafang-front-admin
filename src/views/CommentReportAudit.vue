@@ -1,25 +1,17 @@
 <template>
-  <div class="not-implemented-container">
-    <el-empty
-      description="功能还未实现"
-      :image-size="200"
-    >
-      <el-button type="primary" @click="$router.back()">返回</el-button>
-    </el-empty>
+  <div class="comment-report-audit">
+    <AuditRecordList :fixed-audit-type="4" />
   </div>
 </template>
 
 <script setup>
-// 评论举报审核功能未实现
+// 评论举报审核：复用通用审核记录页，固定 auditType=4
+// （列表/详情/操作日志走真实接口 /audit/record/*；记录由用户端提报后产生）
+import AuditRecordList from './AuditRecordList.vue'
 </script>
 
 <style scoped>
-.not-implemented-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 500px;
-  background-color: #fafafa;
-  border-radius: 8px;
+.comment-report-audit {
+  padding: 20px;
 }
 </style>

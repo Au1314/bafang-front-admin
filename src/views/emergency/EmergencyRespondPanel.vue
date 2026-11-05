@@ -242,8 +242,8 @@ onUnmounted(() => {
 
 // 位置信息
 const currentLocation = ref(null)
-// 添加默认位置 - 长沙岳麓区湖南师范大学中和楼
-const defaultLocation = { longitude: 112.9384, latitude: 28.1857 }
+// 安全整改：不再用硬编码默认坐标（长沙）兜底——定位失败时不伪造位置，
+// 列表仍可查看（不带距离排序），响应前必须通过手动定位设置真实位置
 const locationError = ref(null)
 const manualLocation = reactive({
   longitude: '',
@@ -336,7 +336,7 @@ const getCurrentLocationWithRetry = (attempt = 0) => {
         console.error('获取位置失败:', error.message)
         locationError.value = error.message
 
-        let errorMsg = '无法获取位置信息，使用默认位置'
+        let errorMsg = '无法获取位置信息，请通过手动定位设置当前位置'
         let duration = 3000
 
         if (error.code === error.TIMEOUT && attempt < 1) {
@@ -349,18 +349,18 @@ const getCurrentLocationWithRetry = (attempt = 0) => {
 
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMsg = '定位权限被拒绝，请在浏览器设置中启用权限'
+            errorMsg = '定位权限被拒绝，请在浏览器设置中启用权限，或使用手动定位'
             duration = 5000
             break
           case error.POSITION_UNAVAILABLE:
-            errorMsg = '位置信息不可用，可能是网络问题或位置服务故障'
+            errorMsg = '位置信息不可用，可能是网络问题或位置服务故障，请使用手动定位'
             break
           case error.TIMEOUT:
-            errorMsg = '获取位置超时，请检查网络连接并重试'
+            errorMsg = '获取位置超时，请检查网络连接并重试，或使用手动定位'
             duration = 5000
             break
           default:
-            errorMsg = `获取位置失败: ${error.message}，使用默认位置`
+            errorMsg = `获取位置失败: ${error.message}，请使用手动定位`
         }
 
         ElMessage.warning({
@@ -369,11 +369,8 @@ const getCurrentLocationWithRetry = (attempt = 0) => {
           showClose: true
         })
 
-        // 使用默认位置
-        currentLocation.value = defaultLocation
+        // 不伪造位置：列表不带距离排序仍可查看，弹出手动定位
         fetchPendingEmergencyList()
-
-        // 显示手动位置设置界面，让用户可以手动输入位置
         showManualLocation.value = true
       },
       {
@@ -386,16 +383,13 @@ const getCurrentLocationWithRetry = (attempt = 0) => {
     locationError.value = '浏览器不支持地理定位'
     console.error('浏览器不支持地理定位功能')
     ElMessage.warning({
-      message: '浏览器不支持地理定位功能，使用默认位置',
+      message: '浏览器不支持地理定位功能，请使用手动定位设置当前位置',
       duration: 5000,
       showClose: true
     })
 
-    // 使用默认位置
-    currentLocation.value = defaultLocation
+    // 不伪造位置：弹出手动定位
     fetchPendingEmergencyList()
-
-    // 显示手动位置设置界面，让用户可以手动输入位置
     showManualLocation.value = true
   }
 }
@@ -418,13 +412,12 @@ const getCurrentLocation = async () => {
     console.error('地理位置权限被拒绝')
     locationError.value = '地理位置权限被拒绝'
     ElMessage.warning({
-      message: '地理位置权限被拒绝，请在浏览器设置中启用权限',
+      message: '地理位置权限被拒绝，请在浏览器设置中启用权限，或使用手动定位',
       duration: 5000,
       showClose: true
     })
 
-    // 使用默认位置
-    currentLocation.value = defaultLocation
+    // 不伪造位置：弹出手动定位
     fetchPendingEmergencyList()
     showManualLocation.value = true
     return

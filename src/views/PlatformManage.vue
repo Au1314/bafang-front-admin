@@ -1037,26 +1037,18 @@ const canManageMember = (member) => {
   return false
 }
 
-// 成员管理方法
-const handleAddMember = () => {
-  ElMessage.info('新增成员功能开发中')
-}
+// 成员管理已收敛到「角色管理」页（/member/list + /member/type），
+// 管理员账号仅通过邀请码注册产生，平台不再提供"新增/删除成员"入口。
 
-const handleSetAdmin = () => {
-  ElMessage.info('设置为管理员功能开发中')
-}
-
-const handleSetRole = () => {
-  ElMessage.info('设置成员角色功能开发中')
-}
-
-const handleRemoveMember = () => {
-  ElMessage.info('剥夺成员身份功能开发中')
-}
-
-// 参数配置方法
+// 参数配置方法（后端暂无平台参数接口：先本地保存，后端就绪后换 /platform/config 接口）
 const handleSaveConfig = () => {
-  ElMessage.info('保存配置功能开发中')
+  try {
+    localStorage.setItem('platformConfig', JSON.stringify({ ...configForm }))
+    ElMessage.success('配置已保存（当前为本地演示保存，后端配置接口就绪后自动生效到全平台）')
+  } catch (error) {
+    console.error('保存配置失败:', error)
+    ElMessage.error('保存配置失败')
+  }
 }
 
 // 日志查看方法

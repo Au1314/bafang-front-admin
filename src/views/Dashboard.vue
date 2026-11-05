@@ -25,7 +25,11 @@
             <span class="value">v1.0.0</span>
           </div>
           <div class="info-item">
-            <span class="label">在线用户数</span>
+            <span class="label">在线用户数
+              <el-tooltip content="演示数据：实时在线统计待后端 WebSocket 聚合接口支持" placement="top">
+                <el-tag size="small" type="warning" effect="plain">演示</el-tag>
+              </el-tooltip>
+            </span>
             <span class="value">{{ onlineUsers }}</span>
           </div>
           <div class="info-item">
@@ -57,7 +61,7 @@ const authStore = useAuthStore()
 // 最后更新：取当前管理员信息里的更新时间
 const lastLoginTime = computed(() => authStore.getAdminBaseInfo.updateTime || '')
 
-// 在线用户数（模拟数据）
+// 在线用户数（演示数据：实时在线统计待后端 WS 聚合接口支持）
 const onlineUsers = ref(12)
 </script>
 

@@ -3,8 +3,8 @@
     <!-- 筛选条件 -->
     <el-card shadow="never" class="filter-card">
       <el-form :inline="true" :model="filterForm" class="filter-form">
-        <!-- 审核类型 -->
-        <el-form-item label="审核类型">
+        <!-- 审核类型（固定类型模式下隐藏选择器） -->
+        <el-form-item v-if="fixedAuditType == null" label="审核类型">
           <el-select v-model="filterForm.auditType" placeholder="请选择" clearable style="width: 180px">
             <el-option label="全部" :value="''" />
             <el-option label="私桩认证" :value="0" />
@@ -379,9 +379,17 @@ import { Document } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/dateFormat'
 import { usePagination } from '@/composables/usePagination'
 
+// 可选 props：固定审核类型（供评论举报/交易申诉等专项页复用），设置后隐藏类型筛选
+const props = defineProps({
+  fixedAuditType: {
+    type: [Number, String],
+    default: null
+  }
+})
+
 // 筛选条件表单
 const filterForm = ref({
-  auditType: '',
+  auditType: props.fixedAuditType ?? '',
   status: '',
   priority: '',
   keyword: '',
@@ -507,7 +515,7 @@ const handleSearch = () => {
 // 重置
 const handleReset = () => {
   filterForm.value = {
-    auditType: '',
+    auditType: props.fixedAuditType ?? '',
     status: '',
     priority: '',
     keyword: '',

@@ -986,33 +986,18 @@ const cancelTransferConversation = () => {
   transferForm.reason = ''
 }
 
-// 切换对话置顶状态
-const toggleConversationTop = async (conversationId, isTop) => {
-  try {
-    chatActionLoading.value = true
+// 切换对话置顶状态（纯前端会话内排序；后端 conversation 表暂无置顶字段）
+const toggleConversationTop = (conversationId, isTop) => {
+  const index = processingChatList.value.findIndex(chat => chat.id === conversationId)
+  if (index !== -1) {
+    processingChatList.value[index].isTop = !isTop
 
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
-
-    // 更新本地对话列表
-    const index = processingChatList.value.findIndex(chat => chat.id === conversationId)
-    if (index !== -1) {
-      processingChatList.value[index].isTop = !isTop
-
-      // 重新排序对话列表，置顶的对话排在前面
-      processingChatList.value.sort((a, b) => {
-        if (a.isTop && !b.isTop) return -1
-        if (!a.isTop && b.isTop) return 1
-        return 0
-      })
-    }
-
-    // ElMessage.success(isTop ? '取消置顶成功' : '置顶成功') // 未完全实现功能，隐藏提示
-  } catch (error) {
-    console.error('切换置顶状态失败:', error)
-    // ElMessage.error('操作失败，请稍后重试') // 未完全实现功能，隐藏报错提示
-  } finally {
-    chatActionLoading.value = false
+    // 重新排序对话列表，置顶的对话排在前面
+    processingChatList.value.sort((a, b) => {
+      if (a.isTop && !b.isTop) return -1
+      if (!a.isTop && b.isTop) return 1
+      return 0
+    })
   }
 }
 
