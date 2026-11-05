@@ -246,15 +246,7 @@
                     </div>
                   </template>
                   <el-form :model="inviteForm" label-width="100px">
-                    <el-form-item label="自定义邀请码">
-                      <el-input 
-                        v-model="inviteForm.code" 
-                        placeholder="留空则随机生成" 
-                        style="width: 100%"
-                        maxlength="20"
-                        show-word-limit
-                      />
-                    </el-form-item>
+                    <!-- 邀请码由服务端随机生成，无需自定义 -->
                     <el-form-item label="权限类型" required>
                       <el-select v-model="inviteForm.targetType" placeholder="请选择权限类型" style="width: 100%">
                         <el-option label="普通管理员" :value="authStore.AdminType.NORMAL_ADMIN" />
@@ -623,7 +615,7 @@ const logDetailLoading = ref(false)
 
 // 邀请码管理数据
 const inviteForm = reactive({
-  code: '', // 自定义邀请码
+  // 邀请码由服务端随机生成，前端无需传 code 字段
   targetType: null, // 目标类型
   maxUses: 5,
   expireHours: 72 // 过期小时数

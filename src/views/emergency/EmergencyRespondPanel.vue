@@ -130,7 +130,7 @@
     </div>
 
     <!-- 紧急呼叫详情 -->
-    <div class="emergency-detail-panel" v-if="selectedEmergencyId">
+    <div class="emergency-detail-panel" v-if="selectedEmergencyId && selectedEmergency">
       <div class="panel-header">
         <h3>紧急呼叫详情</h3>
         <div class="emergency-actions">
@@ -582,6 +582,9 @@ const selectEmergency = async (emergency) => {
 
     console.error('获取呼叫详情失败:', error)
     ElMessage.error('获取呼叫详情失败')
+    // 详情获取失败时清空选中态，避免详情面板继续渲染空对象导致报错
+    selectedEmergencyId.value = null
+    selectedEmergency.value = null
   } finally {
     if (isMounted.value) {
       detailLoading.value = false
@@ -654,7 +657,7 @@ const markAsHandled = async () => {
 
     emergencyActionLoading.value = true
 
-    if (selectedEmergency && selectedEmergency.status === 0) {
+    if (selectedEmergency.value && selectedEmergency.value.status === 0) {
       ElMessage.warning('请先响应呼叫才能进行其他操作')
       return
     }
@@ -683,7 +686,7 @@ const handleEndEmergency = async () => {
   try {
     if (!isMounted.value) return
 
-    if (selectedEmergency && selectedEmergency.status === 0) {
+    if (selectedEmergency.value && selectedEmergency.value.status === 0) {
       ElMessage.warning('请先响应呼叫才能进行其他操作')
       return
     }
@@ -723,12 +726,12 @@ const handleEndEmergency = async () => {
 const addHandlingLog = async () => {
   if (!isMounted.value) return
 
-  if (!newLogContent.trim()) {
+  if (!newLogContent.value.trim()) {
     ElMessage.warning('请输入日志内容')
     return
   }
 
-  if (selectedEmergency && selectedEmergency.status === 0) {
+  if (selectedEmergency.value && selectedEmergency.value.status === 0) {
     ElMessage.warning('请先响应呼叫才能进行其他操作')
     return
   }

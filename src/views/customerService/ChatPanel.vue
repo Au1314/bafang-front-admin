@@ -641,8 +641,8 @@ const fetchPendingChatList = async () => {
 
 // 选择对话
 const selectChat = async (chat) => {
+  // watch(selectedChatId) 会统一触发 fetchChatMessages，这里不再手动调用，避免重复请求
   selectedChatId.value = chat.id
-  await fetchChatMessages(chat.id)
 
   // 清零未读消息数量
   const index = processingChatList.value.findIndex(c => c.id === chat.id)
@@ -652,15 +652,24 @@ const selectChat = async (chat) => {
 }
 
 // 获取对话消息列表
+// fetchSeq 序号守卫：快速切换会话时，旧会话的迟到响应会被丢弃
+let chatMessagesFetchSeq = 0
 const fetchChatMessages = async (conversationId) => {
+  const fetchSeq = ++chatMessagesFetchSeq
   try {
     messageLoading.value = true
+    // 切换会话时重置分页状态并清空旧消息，避免上个会话"历史已取尽"的状态残留
+    canLoadMore.value = true
+    chatMessages.value = []
     // 使用HTTP API获取历史消息
     const response = await authApi.getChatMessageList(conversationId, {
       pageNum: 1,
       pageSize: 50,
       lastMessageId: 0
     })
+
+    // 会话已切换，丢弃过期响应
+    if (fetchSeq !== chatMessagesFetchSeq) return
 
     // 确保response.data存在
     const data = response?.data || {}
@@ -692,13 +701,16 @@ const fetchChatMessages = async (conversationId) => {
     console.error('错误详情:', error.response?.data || error.message)
     // ElMessage.error('获取对话消息失败，请稍后重试') // 未完全实现功能，隐藏报错提示
   } finally {
-    messageLoading.value = false
+    // 仅当仍是本次请求时才复位 loading，避免旧请求关闭新会话的加载状态
+    if (fetchSeq === chatMessagesFetchSeq) {
+      messageLoading.value = false
+    }
   }
 }
 
 // 发送消息
 const handleSendMessage = async () => {
-  if (!sendMessageContent.trim()) {
+  if (!sendMessageContent.value.trim()) {
     // ElMessage.warning('请输入消息内容') // 未完全实现功能，隐藏提示
     return
   }
@@ -1059,12 +1071,18 @@ const loadMoreMessages = async () => {
     messageLoading.value = true
     isLoadingMore.value = true
 
+    // 记录当前会话的请求序号，切换会话后丢弃过期响应
+    const fetchSeq = chatMessagesFetchSeq
+
     // 使用HTTP API获取更多历史消息
     const response = await authApi.getChatMessageList(selectedChatId.value, {
       pageNum: 1,
       pageSize: 50,
       lastMessageId: firstMessage.id
     })
+
+    // 会话已切换，丢弃过期响应（避免旧会话消息混入新会话列表）
+    if (fetchSeq !== chatMessagesFetchSeq) return
 
     // 确保response.data存在
     const data = response?.data || {}
@@ -1098,7 +1116,10 @@ const loadMoreMessages = async () => {
     console.error('错误详情:', error.response?.data || error.message)
     ElMessage.error('加载更多消息失败，请稍后重试')
   } finally {
-    messageLoading.value = false
+    // 迟到响应只复位自己的 isLoadingMore；messageLoading 归当前会话请求管，避免误关新会话的加载态
+    if (fetchSeq === chatMessagesFetchSeq) {
+      messageLoading.value = false
+    }
     isLoadingMore.value = false
   }
 }
