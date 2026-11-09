@@ -2,8 +2,8 @@
   <!-- 开场星空动画：点击任意处 / 按 ESC 进入 -->
   <transition name="splash-fade" @after-leave="revealCard">
     <div v-if="showSplash" class="splash" @click="skipSplash">
-      <!-- 星空背景图（缓慢缩放，营造深邃感） -->
-      <div class="star-bg" :style="{ backgroundImage: `url(${STAR_BG_URL})` }"></div>
+      <!-- 纯 CSS 星空（确定性星点，缓慢缩放营造深邃感） -->
+      <StarField class="splash-star-field" :count="180" :seed="42" />
       <!-- 深色渐变遮罩，保证标题文字可读 -->
       <div class="splash-overlay"></div>
 
@@ -14,8 +14,8 @@
   </transition>
 
   <div class="login-container">
-    <!-- 星空背景图 + 遮罩（降低透明度，不干扰登录卡片阅读） -->
-    <div class="star-bg login-star-bg" :style="{ backgroundImage: `url(${STAR_BG_URL})` }"></div>
+    <!-- 纯 CSS 星空 + 遮罩（降低透明度，不干扰登录卡片阅读） -->
+    <StarField class="login-star-field" :count="120" :seed="7" />
     <div class="mask"></div>
 
     <div class="login-box" :class="{ 'is-visible': cardVisible }">
@@ -92,9 +92,7 @@ import { ElMessage } from 'element-plus'
 import { User, Lock, Monitor } from '@element-plus/icons-vue'
 import { authApi } from '@/api/auth'
 import { useAuthStore } from '@/store/authStore'
-
-// 星空背景图（Unsplash，可按需替换为本地路径如 '@/assets/starry-bg.jpg' 或其它 URL）
-const STAR_BG_URL = 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?q=80&w=1920&auto=format&fit=crop'
+import StarField from '@/components/common/StarField.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -206,14 +204,13 @@ const goToRegister = () => {
 </script>
 
 <style scoped>
-/* ── 星空背景（开场动画与登录页共用，同一张图缓存复用） ── */
-.star-bg {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  will-change: transform;
+/* ── 星空（组件自带渐变底色，此处只做缩放与透明度适配） ── */
+.splash-star-field {
+  animation: star-zoom 25s ease-in-out infinite alternate;
+}
+
+.login-star-field {
+  opacity: 0.8;
   animation: star-zoom 25s ease-in-out infinite alternate;
 }
 

@@ -7,6 +7,22 @@
   --el-table-header-bg-color: var(--color-bg-hover);
 }
 
+/* 主题切换时的柔和过渡（仅颜色类属性，避免布局抖动） */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 暗色模式下卡片底色显式走令牌（el-card 默认白底，由 EP dark 处理，此处兜底自定义场景） */
+html.dark .el-card {
+  background-color: var(--color-bg-card);
+}
+
+/* 暗色模式下表格头/斑马纹对齐暗色 */
+html.dark .el-table {
+  --el-table-tr-bg-color: var(--color-bg-card);
+  --el-table-header-bg-color: var(--color-bg-hover);
+}
+
 /* 表格：统一 8px 圆角 */
 .el-table {
   border-radius: var(--radius-md);

@@ -1,8 +1,10 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import 'element-plus/theme-chalk/dark/css-vars.css'
 import '@/styles/variables.css'
 import '@/styles/element-overrides.css'
 import '@/style.css'
+import { initTheme } from '@/composables/useTheme'
 import {
   ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Avatar, Back, Bell, Box,
   Calendar, ChatDotRound, ChatLineSquare, Check, CircleCheck, CircleClose,
@@ -25,6 +27,9 @@ import router from './router'
 
 const app = createApp(App)
 const pinia = createPinia()
+
+// 主题初始化：挂载前应用本地记忆的亮/暗主题，避免闪烁
+initTheme()
 
 // 全局注册用到的 Element Plus icons（按需引入，避免打包全部图标）
 const icons = {

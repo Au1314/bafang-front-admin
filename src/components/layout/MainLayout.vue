@@ -9,9 +9,35 @@
             <Fold v-else />
           </el-icon>
         </div>
-        <span class="logo">八方互充</span>
+        <span class="logo">
+          <!-- 品牌标志：渐变圆角方 + 闪电（充电意象） -->
+          <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+            <defs>
+              <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#2178dd" />
+                <stop offset="1" stop-color="#1a5fb8" />
+              </linearGradient>
+            </defs>
+            <rect x="1" y="1" width="30" height="30" rx="8" fill="url(#logo-g)" />
+            <path
+              d="M17.5 5.5 10.5 17h4.2l-2.2 9.5 9-13.5h-4.6l3.6-7.5z"
+              fill="#fff"
+              opacity="0.95"
+            />
+          </svg>
+          <span class="logo-text">八方互充</span>
+        </span>
       </div>
       <div class="header-right">
+        <el-icon
+          class="header-action"
+          :size="18"
+          :title="isDark ? '切换亮色模式' : '切换暗色模式'"
+          @click="onToggleTheme"
+        >
+          <Sunny v-if="isDark" />
+          <Moon v-else />
+        </el-icon>
         <el-icon
           class="header-action"
           :size="18"
@@ -77,7 +103,12 @@
               index="/audit"
             >
               <el-icon><DocumentChecked /></el-icon>
-              <template #title>审核管理</template>
+              <template #title>
+                审核管理
+                <span v-if="auditPending > 0" class="menu-badge">
+                  {{ auditPending > 99 ? '99+' : auditPending }}
+                </span>
+              </template>
             </el-menu-item>
             <el-menu-item
               v-if="authStore.hasPermission(['超级管理员', '紧急响应人员'])"
@@ -193,11 +224,13 @@ import {
   House, DocumentChecked, ChatLineSquare, ChatDotRound,
   Warning, Expand, Fold, User, SwitchButton, DataAnalysis,
   TrendCharts, Monitor, Download, OfficeBuilding, Lightning,
-  Bell, Tools, ArrowDown, FullScreen
+  Bell, Tools, ArrowDown, FullScreen, Sunny, Moon
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store/authStore'
 import { authApi } from '@/api/auth'
+import { getAuditStatistics } from '@/api/audit'
 import { roleColorByDesc, roleTagType } from '@/utils/roleColors'
+import { getTheme, toggleTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const route = useRoute()
@@ -205,6 +238,24 @@ const authStore = useAuthStore()
 
 const isCollapsed = ref(false)
 const activeMenu = computed(() => route.path)
+
+// 暗色/亮色主题切换（记忆到 localStorage）
+const isDark = ref(getTheme() === 'dark')
+const onToggleTheme = () => {
+  isDark.value = toggleTheme() === 'dark'
+}
+
+// 审核待办角标：仅对有审核权限的用户拉取
+const auditPending = ref(0)
+const fetchAuditPending = async () => {
+  if (!authStore.hasPermission('audit')) return
+  try {
+    const stats = await getAuditStatistics()
+    auditPending.value = Number(stats?.pendingCount) || 0
+  } catch (error) {
+    console.error('获取审核待办数失败:', error)
+  }
+}
 
 // 角色 tag —— 论坛管理员等无 Element Plus 默认色，用内联样式补
 const customTagStyle = computed(() => {
@@ -249,7 +300,10 @@ const toggleFullscreen = () => {
     document.documentElement.requestFullscreen()
   }
 }
-onMounted(() => document.addEventListener('fullscreenchange', onFullscreenChange))
+onMounted(() => {
+  document.addEventListener('fullscreenchange', onFullscreenChange)
+  fetchAuditPending()
+})
 onBeforeUnmount(() => document.removeEventListener('fullscreenchange', onFullscreenChange))
 
 const handleCommand = async (command) => {
@@ -336,10 +390,37 @@ const handleCommand = async (command) => {
 }
 
 .logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: var(--font-size-md);
   font-weight: 600;
   color: var(--color-text-primary);
   letter-spacing: 0.5px;
+}
+
+.logo-mark {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  box-shadow: 0 4px 12px rgba(33, 120, 221, 0.35);
+}
+
+/* 菜单待办角标 */
+.menu-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  background: var(--color-danger);
+  border-radius: var(--radius-pill);
 }
 
 .header-right .admin-info {
@@ -413,6 +494,7 @@ const handleCommand = async (command) => {
 /* 菜单项 */
 .layout-menu :deep(.el-menu-item),
 .layout-menu :deep(.el-sub-menu__title) {
+  position: relative;
   height: 44px;
   line-height: 44px;
   margin: 2px var(--space-2);
