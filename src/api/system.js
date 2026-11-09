@@ -69,3 +69,38 @@ export const getAdminMemberDetail = (adminId) => {
     method: 'get'
   })
 }
+
+// ==================== 平台参数配置（后端 PlatformConfigController） ====================
+
+/**
+ * 读取平台配置
+ */
+export const getPlatformConfig = () => {
+  return service({
+    url: '/platform/config',
+    method: 'get'
+  })
+}
+
+/**
+ * 保存平台配置（JSON 对象透传）
+ */
+export const savePlatformConfig = (config) => {
+  return service({
+    url: '/platform/config',
+    method: 'put',
+    data: config
+  })
+}
+
+// ==================== 在线人数统计（后端 StatsController /stats/online） ====================
+
+/**
+ * 在线人数（onlineAdmins / onlineUsers，来源 WS 会话管理器）
+ */
+export const getOnlineStats = () => {
+  return service({
+    url: '/stats/online',
+    method: 'get'
+  })
+}

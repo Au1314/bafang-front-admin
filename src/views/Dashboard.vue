@@ -26,8 +26,8 @@
           </div>
           <div class="info-item">
             <span class="label">在线用户数
-              <el-tooltip content="演示数据：实时在线统计待后端 WebSocket 聚合接口支持" placement="top">
-                <el-tag size="small" type="warning" effect="plain">演示</el-tag>
+              <el-tooltip content="当前通过 WebSocket 客服通道在线的用户端数量" placement="top">
+                <el-icon style="vertical-align: -2px"><InfoFilled /></el-icon>
               </el-tooltip>
             </span>
             <span class="value">{{ onlineUsers }}</span>
@@ -48,6 +48,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { InfoFilled } from '@element-plus/icons-vue'
 import DashboardHeader from '@/components/DashboardHeader.vue'
 import StatisticsPanel from '@/components/StatisticsPanel.vue'
 import QuickActions from '@/components/QuickActions.vue'
@@ -55,14 +56,24 @@ import ActivityTimeline from '@/components/ActivityTimeline.vue'
 import RoleBasedCard from '@/components/permission/RoleBasedCard.vue'
 import { formatDateTime } from '@/utils/dateFormat'
 import { useAuthStore } from '@/store/authStore'
+import { getOnlineStats } from '@/api/system'
 
 const authStore = useAuthStore()
 
 // 最后更新：取当前管理员信息里的更新时间
 const lastLoginTime = computed(() => authStore.getAdminBaseInfo.updateTime || '')
 
-// 在线用户数（演示数据：实时在线统计待后端 WS 聚合接口支持）
-const onlineUsers = ref(12)
+// 在线用户数（真实来源：WS 会话统计 /stats/online）
+const onlineUsers = ref(0)
+const fetchOnlineUsers = async () => {
+  try {
+    const data = await getOnlineStats()
+    onlineUsers.value = Number(data?.onlineUsers) || 0
+  } catch (error) {
+    console.error('获取在线人数失败:', error)
+  }
+}
+fetchOnlineUsers()
 </script>
 
 <style scoped>

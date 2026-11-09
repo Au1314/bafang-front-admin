@@ -269,6 +269,25 @@
         </div>
       </el-card>
 
+      <!-- 审核操作（契约补齐：对进行中的记录可认领/通过/拒绝/补材料） -->
+      <el-card
+        shadow="never"
+        class="detail-section"
+        v-if="auditDetail && [0, 1, 4].includes(auditDetail.currentStatus)"
+      >
+        <template #header>
+          <span class="section-title">审核操作</span>
+        </template>
+        <div class="action-bar">
+          <el-button v-if="auditDetail.currentStatus === 0" type="primary" plain @click="handleClaim">
+            认领审核
+          </el-button>
+          <el-button type="success" @click="handleComplete('approve')">通过</el-button>
+          <el-button type="danger" @click="handleComplete('reject')">拒绝</el-button>
+          <el-button type="warning" plain @click="handleComplete('supplement')">要求补充材料</el-button>
+        </div>
+      </el-card>
+
       <!-- 审核日志 -->
       <el-card shadow="never" class="detail-section">
         <template #header>
@@ -373,8 +392,8 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { getAuditRecordList, getAuditRecordDetail, getAuditRecordLogs } from '@/api/audit'
-import { ElMessage } from 'element-plus'
+import { getAuditRecordList, getAuditRecordDetail, getAuditRecordLogs, claimAuditRecord, completeAuditRecord } from '@/api/audit'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/dateFormat'
 import { usePagination } from '@/composables/usePagination'
@@ -592,6 +611,60 @@ const handleRowClick = (row) => {
   fetchAuditDetail(row.id)
 }
 
+// ==================== 审核动作（契约补齐） ====================
+
+// 刷新详情与列表
+const refreshAfterAction = async () => {
+  detailDialogVisible.value = false
+  await fetchAuditRecordList()
+}
+
+// 认领审核（待审核 → 审核中）
+const handleClaim = async () => {
+  try {
+    await claimAuditRecord(auditDetail.value.id)
+    ElMessage.success('认领成功，该记录已进入审核中')
+    await fetchAuditDetail(auditDetail.value.id)
+  } catch (error) {
+    console.error('认领失败:', error)
+  }
+}
+
+// 完成审核（通过/拒绝/补材料）
+const handleComplete = async (action) => {
+  try {
+    let opinion = ''
+    let rejectReason = ''
+
+    if (action === 'reject') {
+      const { value } = await ElMessageBox.prompt('请输入拒绝原因：', '拒绝审核', {
+        confirmButtonText: '确认拒绝',
+        cancelButtonText: '取消',
+        inputPlaceholder: '如：材料不完整，无法核实',
+        inputValidator: (v) => (v && v.trim() ? true : '拒绝原因不能为空'),
+        type: 'warning'
+      })
+      rejectReason = value.trim()
+    } else {
+      const labels = { approve: '通过', supplement: '要求补充材料' }
+      const { value } = await ElMessageBox.prompt(`请输入审核意见（${labels[action]}）：`, labels[action], {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        inputPlaceholder: '选填',
+        type: action === 'approve' ? 'success' : 'warning'
+      }).catch(() => ({ value: '' }))
+      opinion = (value || '').trim()
+    }
+
+    await completeAuditRecord(auditDetail.value.id, { action, opinion, rejectReason })
+    ElMessage.success(action === 'approve' ? '审核已通过' : action === 'reject' ? '已拒绝该申请' : '已通知申请人补充材料')
+    await refreshAfterAction()
+  } catch (error) {
+    if (error === 'cancel') return
+    console.error('审核操作失败:', error)
+  }
+}
+
 // 组件挂载时获取数据
 onMounted(() => {
   fetchAuditRecordList()
@@ -628,6 +701,12 @@ onMounted(() => {
   font-size: 14px;
   color: var(--color-text-regular);
   font-weight: normal;
+}
+
+.action-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .pagination {

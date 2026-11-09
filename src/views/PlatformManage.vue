@@ -547,6 +547,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAuthStore } from '@/store/authStore'
 import { useInviteCodeStore } from '@/store/inviteCodeStore'
 import { authApi } from '@/api/auth'
+import { getPlatformConfig, savePlatformConfig } from '@/api/system'
 import { useRouter } from 'vue-router'
 import { CopyDocument } from '@element-plus/icons-vue'
 
@@ -1040,14 +1041,52 @@ const canManageMember = (member) => {
 // 成员管理已收敛到「角色管理」页（/member/list + /member/type），
 // 管理员账号仅通过邀请码注册产生，平台不再提供"新增/删除成员"入口。
 
-// 参数配置方法（后端暂无平台参数接口：先本地保存，后端就绪后换 /platform/config 接口）
-const handleSaveConfig = () => {
+// 参数配置方法（后端契约：/platform/config 单行 JSON 配置）
+const handleSaveConfig = async () => {
   try {
-    localStorage.setItem('platformConfig', JSON.stringify({ ...configForm }))
-    ElMessage.success('配置已保存（当前为本地演示保存，后端配置接口就绪后自动生效到全平台）')
+    configSaving.value = true
+    await savePlatformConfig({ ...configForm })
+    ElMessage.success('平台配置已保存')
   } catch (error) {
     console.error('保存配置失败:', error)
-    ElMessage.error('保存配置失败')
+    // 后端不可达时退回本地保存，保证演示可用
+    try {
+      localStorage.setItem('platformConfig', JSON.stringify({ ...configForm }))
+      ElMessage.warning('后端保存失败，已暂存到本地')
+    } catch (localError) {
+      ElMessage.error('保存配置失败')
+    }
+  } finally {
+    configSaving.value = false
+  }
+}
+
+const configSaving = ref(false)
+
+// 加载平台配置（后端 → 本地兜底）
+const loadPlatformConfig = async () => {
+  try {
+    const data = await getPlatformConfig()
+    if (data && typeof data === 'object') {
+      Object.assign(configForm, {
+        defaultCallRange: data.defaultCallRange ?? configForm.defaultCallRange,
+        creditReward: data.creditReward ?? configForm.creditReward,
+        logFields: Array.isArray(data.logFields) ? data.logFields : configForm.logFields
+      })
+      return
+    }
+    throw new Error('空配置')
+  } catch (error) {
+    // 后端无数据/不可达：读本地暂存
+    try {
+      const local = localStorage.getItem('platformConfig')
+      if (local) {
+        const parsed = JSON.parse(local)
+        Object.assign(configForm, parsed)
+      }
+    } catch (localError) {
+      console.error('读取本地配置失败:', localError)
+    }
   }
 }
 
@@ -1180,6 +1219,7 @@ const handleLogRowClick = (log) => {
 // 组件挂载时初始化
 onMounted(async () => {
   await fetchMemberList() // 自动加载管理员列表
+  loadPlatformConfig() // 加载平台参数配置（后端 → 本地兜底）
 })
 
 // 监听tab切换

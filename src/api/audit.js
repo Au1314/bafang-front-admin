@@ -44,3 +44,26 @@ export const getAuditRecordLogs = (id) => {
     method: 'get'
   })
 }
+
+/**
+ * 认领审核（待审核 → 审核中，记录当前处理人）
+ */
+export const claimAuditRecord = (id) => {
+  return service({
+    url: `/audit/record/${id}/claim`,
+    method: 'post'
+  })
+}
+
+/**
+ * 完成审核
+ * @param {number|string} id - 审核记录ID
+ * @param {Object} data - {action: 'approve'|'reject'|'supplement', opinion, rejectReason}
+ */
+export const completeAuditRecord = (id, data) => {
+  return service({
+    url: `/audit/record/${id}/complete`,
+    method: 'post',
+    data
+  })
+}
