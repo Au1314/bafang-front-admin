@@ -67,3 +67,13 @@ export const completeAuditRecord = (id, data) => {
     data
   })
 }
+
+/**
+ * 获取审核统计数据（Dashboard 待办：pendingCount/processingCount 等）
+ */
+export const getAuditStatistics = () => {
+  return service({
+    url: '/audit/record/statistics',
+    method: 'get'
+  })
+}

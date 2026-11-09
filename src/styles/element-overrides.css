@@ -30,3 +30,43 @@
 .el-select__wrapper.is-focused {
   box-shadow: var(--shadow-focus) !important;
 }
+
+/* 卡片：统一圆角/阴影/边框（消解各页自绘卡片与大屏风格不一致） */
+.el-card {
+  border-radius: var(--radius-lg);
+  border-color: var(--color-border-lighter);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow var(--transition-base), border-color var(--transition-base);
+}
+
+.el-card__header {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* 按钮：统一圆角 */
+.el-button {
+  border-radius: var(--radius-md);
+}
+
+/* 弹窗/抽屉：统一圆角 */
+.el-dialog {
+  border-radius: var(--radius-lg);
+}
+
+.el-drawer {
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+/* 分页：统一圆角，右对齐由容器控制 */
+.el-pagination .el-pager li,
+.el-pagination .btn-prev,
+.el-pagination .btn-next,
+.el-pagination .el-select .el-input__wrapper {
+  border-radius: var(--radius-sm);
+}
+
+/* 标签：统一圆角 */
+.el-tag {
+  border-radius: var(--radius-sm);
+}

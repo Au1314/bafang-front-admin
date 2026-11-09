@@ -1,7 +1,7 @@
 <template>
   <div class="audit-record-list">
     <!-- 筛选条件 -->
-    <el-card shadow="never" class="filter-card">
+    <FilterBar @search="handleSearch" @reset="handleReset">
       <el-form :inline="true" :model="filterForm" class="filter-form">
         <!-- 审核类型（固定类型模式下隐藏选择器） -->
         <el-form-item v-if="fixedAuditType == null" label="审核类型">
@@ -42,9 +42,9 @@
 
         <!-- 关键词 -->
         <el-form-item label="关键词">
-          <el-input 
-            v-model="filterForm.keyword" 
-            placeholder="审核单号、标题" 
+          <el-input
+            v-model="filterForm.keyword"
+            placeholder="审核单号、标题"
             clearable
             style="width: 200px"
           />
@@ -63,14 +63,8 @@
             value-format="YYYY-MM-DD"
           />
         </el-form-item>
-
-        <!-- 操作按钮 -->
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
       </el-form>
-    </el-card>
+    </FilterBar>
 
     <!-- 表格展示 -->
     <el-card shadow="never" class="table-card">
@@ -397,6 +391,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/dateFormat'
 import { usePagination } from '@/composables/usePagination'
+import FilterBar from '@/components/common/FilterBar.vue'
 
 // 可选 props：固定审核类型（供评论举报/交易申诉等专项页复用），设置后隐藏类型筛选
 const props = defineProps({
@@ -674,16 +669,6 @@ onMounted(() => {
 <style scoped>
 .audit-record-list {
   width: 100%;
-}
-
-.filter-card {
-  margin-bottom: 16px;
-}
-
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
 }
 
 .table-card {

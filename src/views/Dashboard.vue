@@ -3,17 +3,22 @@
     <!-- 头部：欢迎信息 -->
     <DashboardHeader />
 
-    <!-- 统计卡片 -->
-    <StatisticsPanel />
+    <!-- 真实核心指标（/stats/screen） -->
+    <DashboardRealStats />
 
-    <!-- 主要内容区 -->
+    <!-- 待办 + 最近动态 -->
     <div class="main-content">
       <div class="content-section">
-        <QuickActions />
+        <DashboardTodo />
       </div>
       <div class="content-section">
-        <ActivityTimeline />
+        <DashboardActivity />
       </div>
+    </div>
+
+    <!-- 快捷入口 -->
+    <div class="content-section">
+      <QuickActions />
     </div>
 
     <!-- 底部：系统信息 -->
@@ -50,9 +55,10 @@
 import { ref, computed } from 'vue'
 import { InfoFilled } from '@element-plus/icons-vue'
 import DashboardHeader from '@/components/DashboardHeader.vue'
-import StatisticsPanel from '@/components/StatisticsPanel.vue'
+import DashboardRealStats from '@/components/dashboard/DashboardRealStats.vue'
+import DashboardTodo from '@/components/dashboard/DashboardTodo.vue'
+import DashboardActivity from '@/components/dashboard/DashboardActivity.vue'
 import QuickActions from '@/components/QuickActions.vue'
-import ActivityTimeline from '@/components/ActivityTimeline.vue'
 import RoleBasedCard from '@/components/permission/RoleBasedCard.vue'
 import { formatDateTime } from '@/utils/dateFormat'
 import { useAuthStore } from '@/store/authStore'
@@ -84,69 +90,44 @@ fetchOnlineUsers()
 
 .main-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-5);
-  margin-bottom: var(--space-5);
+  grid-template-columns: 1fr 1.4fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .content-section {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-extra-light);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  box-shadow: var(--shadow-card);
-  transition: box-shadow var(--transition-base);
-}
-
-.content-section:hover {
-  box-shadow: var(--shadow-card-hover);
+  min-width: 0;
 }
 
 .system-info {
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
 }
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-3) var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-4);
 }
 
 .info-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-border-lighter);
-}
-
-.info-item:last-child,
-.info-item:nth-last-child(2) {
-  border-bottom: none;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .info-item .label {
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  font-size: var(--font-size-base);
 }
 
 .info-item .value {
+  font-size: var(--font-size-md);
+  font-weight: 600;
   color: var(--color-text-primary);
-  font-weight: 500;
-  font-size: var(--font-size-base);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .main-content {
-    grid-template-columns: 1fr;
-    gap: var(--space-4);
-  }
-
-  .content-section {
-    padding: var(--space-4);
-  }
-
-  .info-grid {
     grid-template-columns: 1fr;
   }
 }

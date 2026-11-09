@@ -1,7 +1,7 @@
 <template>
   <div class="log-manage">
     <!-- 筛选 -->
-    <el-card shadow="never" class="filter-card">
+    <FilterBar @search="handleSearch" @reset="handleReset">
       <el-form :inline="true" :model="filterForm" class="filter-form">
         <el-form-item label="操作模块">
           <el-select v-model="filterForm.module" placeholder="全部模块" clearable filterable style="width: 180px">
@@ -29,12 +29,8 @@
             value-format="YYYY-MM-DD"
           />
         </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="handleReset">重置</el-button>
-        </el-form-item>
       </el-form>
-    </el-card>
+    </FilterBar>
 
     <!-- 列表 -->
     <el-card shadow="never">
@@ -128,6 +124,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { getLogList, getLogDetail, getLogModules } from '@/api/system'
+import FilterBar from '@/components/common/FilterBar.vue'
 
 // 后端 SystemLogQueryDTO 分页参数名为 page / size
 const logList = ref([])
@@ -228,17 +225,7 @@ onMounted(() => {
 
 <style scoped>
 .log-manage {
-  padding: 20px;
-}
-
-.filter-card {
-  margin-bottom: 16px;
-}
-
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  padding: var(--space-5);
 }
 
 .card-header {
