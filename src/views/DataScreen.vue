@@ -13,6 +13,9 @@
 
       <CoreMetricsSection :metrics-data="metricsData" :metrics-prev="metricsPrev" :demo-keys="demoMetricKeys" />
 
+      <!-- 实时功率口径说明：充电中私桩额定功率合计，随自动刷新更新 -->
+
+
       <DataChartsSection
         ref="chartsRef"
         :time-range="filters.timeRange"
@@ -123,7 +126,7 @@ const overrideRealtime = (response) => {
 }
 
 // 拉取数据：优先真实大屏汇总（/stats/screen），拿不到再回退演示数据；后端实时字段尽力覆盖
-const demoMetricKeys = ['realtimePower', 'deviceOnlineRate']
+const demoMetricKeys = ['deviceOnlineRate']
 
 const fetchData = async () => {
   loading.value = true
@@ -132,12 +135,13 @@ const fetchData = async () => {
     try {
       const stats = await authApi.getScreenStats()
       if (stats) {
-        // 真实指标（后端 /stats/screen 汇总）
+        // 真实指标（后端 /stats/screen 汇总；实时功率为充电中桩额定功率合计）
         metricsData.totalChargeEnergy = Number(stats.totalChargeAmount) || 0
         metricsData.faultPileCount = Number(stats.faultPileCount) || 0
         metricsData.orderTotalAmount = Number(stats.totalRevenue) || 0
         metricsData.totalUsers = Number(stats.totalUsers) || 0
-        // 无数据来源的两项保留演示值（指标卡上已明示"演示"标注）
+        metricsData.realtimePower = Number(stats.realtimePower) || 0
+        // 无数据来源的仅剩设备在线率保留演示值（指标卡上已明示"演示"标注）
         const mock = getMockMetrics(filters.timeRange, filters)
         demoMetricKeys.forEach((key) => {
           metricsData[key] = mock.current[key]
